@@ -6,7 +6,7 @@ from .models import Course, Lesson
 class LessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
-        fields = '__all__'
+        fields = "__all__"
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -15,7 +15,6 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_count_of_lessons(self, obj):
         return obj.lesson_set.count()
-
 
     def get_info_lessons(self, course):
         lessons = course.lesson_set.all()

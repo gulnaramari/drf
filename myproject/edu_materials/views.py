@@ -1,14 +1,18 @@
 from rest_framework import generics, permissions, viewsets
-from rest_framework.generics import DestroyAPIView, UpdateAPIView, RetrieveAPIView, ListAPIView, CreateAPIView
+from rest_framework.generics import (CreateAPIView, DestroyAPIView,
+                                     ListAPIView, RetrieveAPIView,
+                                     UpdateAPIView)
 from rest_framework.viewsets import ModelViewSet
+
+from users.permissions import IsModerator, IsOwner
 
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
-from users.permissions import IsModerator, IsOwner
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
+
     def get_permissions(self):
         if self.action == "create":
             self.permission_classes = (~IsModerator,)
@@ -40,7 +44,6 @@ class LessonCreateAPIView(generics.CreateAPIView):
 class LessonListAPIView(generics.ListAPIView):
     serializer_class = LessonSerializer
     permission_classes = (IsModerator | IsOwner,)
-
 
     def get_queryset(self):
         if not IsModerator().has_permission(self.request, self):

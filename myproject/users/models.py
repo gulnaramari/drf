@@ -1,12 +1,10 @@
 from datetime import datetime
 
-from django.contrib.auth.models import (BaseUserManager, AbstractUser,
-                                       )
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 
 from edu_materials.models import Course, Lesson
-
 
 
 class UserManager(BaseUserManager):
@@ -61,10 +59,14 @@ class User(AbstractUser):
         help_text="Введите название города",
     )
     is_staff = models.BooleanField(
-        default=False, verbose_name="staff", help_text="Select whether user can act as admin"
+        default=False,
+        verbose_name="staff",
+        help_text="Select whether user can act as admin",
     )
     is_active = models.BooleanField(
-        default=True, verbose_name="active", help_text="Select whether user can use the service"
+        default=True,
+        verbose_name="active",
+        help_text="Select whether user can use the service",
     )
     date_joined = models.DateTimeField(default=timezone.now)
 
@@ -79,6 +81,7 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
 
 class Payment(models.Model):
     PAYMENT_CHOICES = [
@@ -111,4 +114,3 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.owner} - {self.get_type_display()} - {self.amount}"
-

@@ -82,7 +82,7 @@ class Lesson(models.Model):
         verbose_name="owner",
         help_text="Укажите владельца лекции",
         null=True,
-        blank=True
+        blank=True,
     )
 
     class Meta:
