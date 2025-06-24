@@ -16,6 +16,7 @@ class CourseSerializer(serializers.ModelSerializer):
     def get_count_of_lessons(self, obj):
         return obj.lesson_set.count()
 
+
     def get_info_lessons(self, course):
         lessons = course.lesson_set.all()
         return LessonSerializer(lessons, many=True).data
