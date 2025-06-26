@@ -2,21 +2,21 @@ from rest_framework.permissions import BasePermission
 
 
 class IsModerator(BasePermission):
-    """Class for determining perms for moderators."""
+    """Модель для получения прав группы модераторов."""
 
     def has_permission(self, request, view):
         return request.user.groups.filter(name="Модераторы").exists()
 
 
 class IsOwner(BasePermission):
-    """Class for determining perms for course and lesson owners."""
+    """Модель для получения прав у владельцев курса или лекции."""
 
     def has_object_permission(self, request, view, obj):
         return obj.owner == request.user
 
 
 class IsUser(BasePermission):
-    """Class for determining perms for users."""
+    """Модель для получения прав у пользователей"""
 
     def has_object_permission(self, request, view, obj):
         return obj == request.user

@@ -8,6 +8,7 @@ from edu_materials.models import Course, Lesson
 
 
 class UserManager(BaseUserManager):
+    """Создает пользователя или суперпользователя с нужными правами"""
     use_in_migrations = True
 
     def create_user(self, email, password=None, **extra_fields):
@@ -32,6 +33,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    """Создание модели пользователя с соответствующими полями"""
     username = None
     email = models.EmailField(
         unique=True, verbose_name="почта", help_text="Введите почту"
@@ -84,6 +86,7 @@ class User(AbstractUser):
 
 
 class Payment(models.Model):
+    """Создание модели платежа с соответствующими полями"""
     PAYMENT_CHOICES = [
         ("BANK_TRANSFER", "Банковский перевод"),
         ("CASH", "Наличными"),

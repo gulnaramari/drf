@@ -4,6 +4,7 @@ from config.settings import AUTH_USER_MODEL
 
 
 class Course(models.Model):
+    """Создание модели курса с соответствующими полями"""
     name = models.CharField(
         max_length=100,
         verbose_name="название курса",
@@ -42,6 +43,7 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    """Создание модели лекции с соответствующими полями"""
     name = models.CharField(
         max_length=100,
         verbose_name="название урока",

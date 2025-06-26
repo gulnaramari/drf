@@ -1,17 +1,27 @@
-EduMaterials API Service
-A RESTful API service for Learning Management System (LMS) built with DRF and PostgreSQL.
+EduMaterials API Сервис
+EduMaterials  - это веб-приложение, позволяющее пользователям размещать свои полезные материалы или курсы.
 
-Features
-User authentication (JWT)
-Course management
-Lesson management
-User management (automatic blocking of inactive users)
+Описание
+Приложение позволяет создавать и управлять курсами, добавлять материалы, а также предоставляет функционал для управления пользователями и их доступами.
 
-Installation
-Clone the repository:
-git clone https://github.com/gulnaramari/drf.git
-Set your environment variables: Fill in '.env.sample' file. Don't forget to rename the file to .env!
-Start the container:
-docker-compose up
-Congratulations! The project is set up successfully! To enjoy all the features go to http://localhost:8000/users/register and create a user account.
-
+Авторы
+Имя: Михайлова Гульнара
+Email: gulnaramari@yandex.ru
+GitHub: https://github.com/gulnaramari/drf.git
+Требования к проекту
+Python: версия 3.8 или выше
+Django: версия 3.2 или выше
+PostgreSQL: версия 12 или выше
+Инструкции по установке и запуску проекта
+Клонировать репозиторий: git clone git@github.com:gulnaramari/drf.git
+Перейти в папку проекта: cd myproject
+Установить зависимости: pip install -r requirements.txt
+Создайте файл .env в корневой папке проекта и заполните его по шаблону .env.sample переменными:
+SECRET_KEY: секретный ключ проекта (например, случайная строка из 50 символов)
+NAME: имя базы данных
+DBUSER: имя пользователя базы данных
+PASSWORD: пароль пользователя базы данных
+HOST: адрес хоста базы данных (например, localhost)
+PORT: порт базы данных (например, 5432)
+Создать базу данных: python manage.py migrate
+Запустить сервер: python manage.py runserver
