@@ -1,22 +1,23 @@
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions, viewsets, views
 from rest_framework.generics import (CreateAPIView, DestroyAPIView,
                                      ListAPIView, RetrieveAPIView,
-                                     UpdateAPIView)
+                                     UpdateAPIView, get_object_or_404)
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from users.permissions import IsModerator, IsOwner
 
-from .models import Course, Lesson
+from .models import Course, Lesson, Subscription
 from .serializers import CourseSerializer, LessonSerializer
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    """контроллер-вьюсет для CRUD
+    """Контроллер-вьюсет для CRUD
      с правами для работы модераторов, немодераторов или владельцев курсов\лекций """
     serializer_class = CourseSerializer
 
     def get_permissions(self):
-       """метод для разграничения прав доступа, формирует список
+       """Метод для разграничения прав доступа, формирует список
         прав  для немодератора, модератора или владельца"""
        if self.action == "create":
             self.permission_classes = (~IsModerator,)
@@ -36,6 +37,23 @@ class CourseViewSet(viewsets.ModelViewSet):
         if not IsModerator().has_permission(self.request, self):
             return Course.objects.filter(owner=self.request.user)
         return Course.objects.all()
+
+
+class CourseSubscriptionApiView(views.APIView):
+    def post(self, *args, **kwargs):
+        course_id = self.kwargs.get("pk")
+        course = get_object_or_404(Course, pk=course_id)
+        is_subscribe = self.request.data.get("subscribe")
+        user = self.request.user
+
+        if is_subscribe:
+            subscription = user.subscriptions.create(user=user, course=course)
+            subscription.save()
+            message = f"Вы успешно подписаны на курс '{course.name}'"
+        else:
+            Subscription.objects.filter(user=user, course=course).delete()
+            message = f"Ваша подписка на курс '{course.name}' аннулирована."
+        return Response({"message": message})
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
