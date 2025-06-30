@@ -12,7 +12,8 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Создание сериализатора для модели пользователя с вложенным сериализатором платежей"""
+    """Создание сериализатора для модели пользователя с вложенным сериализатором платежей,
+    видим, какие платежи были у пользователя"""
     payments = PaymentSerializer(many=True, read_only=True)
 
     class Meta:
@@ -24,8 +25,8 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
-            "phone_number",
-            "city",
+            "phone",
+            "town",
             "avatar",
             "payments",
         )
@@ -39,7 +40,7 @@ class UserBaseSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "email",
-            "phone_number",
-            "city",
+            "phone",
+            "town",
             "avatar",
         )

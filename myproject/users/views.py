@@ -50,6 +50,8 @@ class UserRetrieveAPIView(RetrieveAPIView):
     queryset = User.objects.all()
 
     def get_serializer_class(self):
+        """Метод, позволяет получать детализацию полную для пользователя,
+         и частичную не для этого пользователя"""
         if self.kwargs.get("pk") == self.request.user.pk:
             return UserSerializer
         return UserBaseSerializer

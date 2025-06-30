@@ -11,7 +11,8 @@ class LessonSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    """Создание сериализатора для модели курса с вложенным сериализатором по лекции"""
+    """Создание кастомного сериализатора для модели курса
+    с дополнительными полями и вложенным сериализатором по лекции"""
     count_of_lessons = serializers.SerializerMethodField()
     info_lessons = serializers.SerializerMethodField()
 
