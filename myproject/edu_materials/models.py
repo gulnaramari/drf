@@ -5,6 +5,7 @@ from config.settings import AUTH_USER_MODEL
 
 class Course(models.Model):
     """Создание модели курса с соответствующими полями"""
+
     name = models.CharField(
         max_length=100,
         verbose_name="название курса",
@@ -44,6 +45,7 @@ class Course(models.Model):
 
 class Lesson(models.Model):
     """Создание модели лекции с соответствующими полями"""
+
     name = models.CharField(
         max_length=100,
         verbose_name="название урока",
@@ -65,10 +67,12 @@ class Lesson(models.Model):
     )
     course = models.ForeignKey(
         Course,
-        on_delete=models.CASCADE,
-        verbose_name="курс",
-        help_text="выберите курс",
-        related_name="lesson_set",
+        on_delete=models.SET_NULL,
+        related_name="lessons",
+        verbose_name="course",
+        help_text="Select the course",
+        null=True,
+        blank=True,
     )
     video_url = models.URLField(
         max_length=200,

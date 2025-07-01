@@ -1,10 +1,18 @@
 from rest_framework import serializers
 
 from .models import Course, Lesson, Subscription
+from .validators import URLValidator
 
 
 class LessonSerializer(serializers.ModelSerializer):
     """Создание сериализатора для модели лекции"""
+
+    video_url = serializers.URLField(
+        validators=[URLValidator()],
+        required=False,
+        help_text="Введите ссылку на лекцию. Внимание! Разрешены ссылки только на Youtube.",
+    )
+
     class Meta:
         model = Lesson
         fields = "__all__"
@@ -13,32 +21,28 @@ class LessonSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     """Создание кастомного сериализатора для модели курса
     с дополнительными полями и вложенным сериализатором по лекции"""
-    count_of_lessons = serializers.SerializerMethodField()
-    info_lessons = serializers.SerializerMethodField()
+
+    amount_of_lessons = serializers.SerializerMethodField()
+    lessons = LessonSerializer(read_only=True, many=True)
     is_subscribed = serializers.SerializerMethodField()
 
-    def get_count_of_lessons(self, obj):
-        """Метод расчета количества лекций этого курса."""
-        return obj.lesson_set.count()
-
-    def get_info_lessons(self, course):
-        lessons = course.lesson_set.all()
-        return LessonSerializer(lessons, read_only=True, many=True).data
+    def get_amount_of_lessons(self, course):
+        """Calculating amount of lessons of a course."""
+        return Lesson.objects.filter(course=course).count()
 
     def get_is_subscribed(self, course):
-        """Метод, который возвращает нам, подписан пользователь на этот курс или нет"""
+        """Returns info whether the user is subscribed to the course or not."""
         user = self.context.get("request").user
         return Subscription.objects.filter(user=user, course=course).exists()
 
     class Meta:
         model = Course
         fields = (
+            "id",
             "name",
             "description",
-            "preview",
-            "count_of_lessons",
-            "info_lessons",
-            "is_subscribed"
+            "owner",
+            "amount_of_lessons",
+            "lessons",
+            "is_subscribed",
         )
-
-
