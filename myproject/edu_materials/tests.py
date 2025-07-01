@@ -229,6 +229,7 @@ class CourseModeratorTestCase(APITestCase):
     """Тест для модераторов"""
 
     def setUp(self):
+        """заполнение базы данных"""
         self.user = User.objects.create(email="user@user.ru")
         self.course = Course.objects.create(name="Course 1", owner=self.user)
         self.course2 = Course.objects.create(name="Course 2", owner=self.user)
@@ -237,6 +238,7 @@ class CourseModeratorTestCase(APITestCase):
         self.client.force_authenticate(user=self.moder)
 
     def test_course_create_error(self):
+        """Проверка, что модератор не вправе создать курс лекций"""
         url = reverse("edu_materials:course-list")
         body = {"name": "Moder Course"}
         request = self.client.post(url, body)
@@ -249,6 +251,7 @@ class CourseModeratorTestCase(APITestCase):
         self.assertEqual(Course.objects.all().count(), 2)
 
     def test_course_list(self):
+        """Проверка, что модератор может посмотреть список курсов лекций"""
         url = reverse("edu_materials:course-list")
         request = self.client.get(url)
         response = request.json()
@@ -275,6 +278,7 @@ class CourseModeratorTestCase(APITestCase):
         )
 
     def test_course_update(self):
+        """Проверка, что модератор может редактировать курс лекций"""
         url = reverse("edu_materials:course-detail", args=(self.course.pk,))
         body = {"name": "Moder Course"}
         request = self.client.patch(url, body)
@@ -284,6 +288,7 @@ class CourseModeratorTestCase(APITestCase):
         self.assertEqual(response.get("name"), "Moder Course")
 
     def test_course_delete_error(self):
+        """Проверка, что модератор не вправе удалить курс лекций"""
         url = reverse("edu_materials:course-detail", args=(self.course.pk,))
         request = self.client.delete(url)
         response = request.json()
