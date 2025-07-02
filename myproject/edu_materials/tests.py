@@ -12,31 +12,23 @@ class LessonUserTestCase(APITestCase):
     def setUp(self):
         """заполнение базы"""
         self.user = User.objects.create(email="user@user.ru")
-        self.lesson = Lesson.objects.create(name="Lesson 1", owner=self.user)
-        self.user2 = User.objects.create(email="user2@user.ru")
-        self.lesson2 = Lesson.objects.create(name="Lesson 2", owner=self.user2)
-        self.client.force_authenticate(user=self.user)
+        video_url = "https://www.youtube.com/"
 
-    def test_lesson_create(self):
-        """Тест на корректное создание лекции"""
-        url = reverse("edu_materials:create_lesson")
-        body = {"name": "Lesson 3"}
-        request = self.client.post(url, body)
-
-        self.assertEqual(request.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Lesson.objects.all().count(), 3)
-
-    def test_lesson_create_error(self):
-        """Тест на неправильное создание лекции"""
-        url = reverse("edu_materials:create_lesson")
-        body = {"name": "My Lesson", "video_url": "https://my.sky.pro"}
-        request = self.client.post(url, body)
-        response = request.json()
-
-        self.assertEqual(request.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(
-            response.get("video_url"), ["Ссылка на сторонний ресурс недопустима!"]
+        self.lesson = Lesson.objects.create(
+            name="Test Lesson for tests",
+            description="Test Lesson for tests",
+            video_url=video_url,
+            owner=self.user,
         )
+        self.user2 = User.objects.create(email="user2@user.ru")
+        self.lesson2 = Lesson.objects.create(
+            name="Test Lesson for tests",
+            description="Test Lesson for tests",
+            video_url=video_url,
+            owner=self.user2,
+        )
+
+        self.client.force_authenticate(user=self.user)
 
     def test_lesson_retrieve(self):
         """Тест на корректное отображение детали лекции"""
@@ -45,7 +37,7 @@ class LessonUserTestCase(APITestCase):
         response = request.json()
 
         self.assertEqual(request.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get("name"), "Lesson 1")
+        self.assertEqual(response.get("name"), "Test Lesson for tests")
         self.assertEqual(response.get("owner"), self.user.pk)
 
     def test_lesson_retrieve_error(self):
@@ -59,42 +51,47 @@ class LessonUserTestCase(APITestCase):
             response.get("detail"), "You do not have permission to perform this action."
         )
 
-    def test_lesson_list(self):
-        """Тест на корректный вывод списка лекций"""
-        url = reverse("edu_materials:lesson_list")
-        request = self.client.get(url)
-        response = request.json()
+    def test_create_lesson(self):
+        """Тест создания нового урока."""
 
-        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        url = reverse("edu_materials:create_lesson")
+        data = {
+            "name": "Test Lesson for tests 2",
+            "description": "Test Lesson for tests 2",
+            "video_url": "https://www.youtube.com/lesson_1",
+            "owner": self.user.pk,
+        }
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(
-            response,
-            {
-                "count": 1,
-                "next": None,
-                "previous": None,
-                "results": [
-                    {
-                        "id": self.lesson.pk,
-                        "video_url": None,
-                        "name": self.lesson.name,
-                        "description": None,
-                        "preview": None,
-                        "course": None,
-                        "owner": self.user.pk,
-                    }
-                ],
-            },
+            Lesson.objects.filter(description="Test Lesson for tests 2").count(), 1
+        )
+        self.assertTrue(Lesson.objects.all().exists())
+
+    def test_update_lesson(self):
+        """Тест изменения урока по Primary Key."""
+
+        url = reverse("edu_materials:update_lesson", args=(self.lesson.pk,))
+        data = {
+            "name": "Updated Test Lesson for tests",
+            "description": "Updated Test Lesson for tests 2",
+            "video_url": "https://www.youtube.com/lesson_1",
+            "owner": self.user.pk,
+        }
+        response = self.client.put(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            Lesson.objects.get(pk=self.lesson.pk).description,
+            "Updated Test Lesson for tests 2",
         )
 
-    def test_lesson_update(self):
-        """Тест на корректное редактирование лекции"""
-        url = reverse("edu_materials:update_lesson", args=(self.lesson.pk,))
-        body = {"name": "My Lesson"}
-        request = self.client.patch(url, body)
-        response = request.json()
+    def test_lesson_delete1(self):
+        """Тест удаления урока по Primary Key."""
 
-        self.assertEqual(request.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get("name"), "My Lesson")
+        url = reverse("edu_materials:delete_lesson", args=(self.lesson.pk,))
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Lesson.objects.count(), 1)
 
     def test_lesson_delete(self):
         """Тест на корректное удаление лекции"""

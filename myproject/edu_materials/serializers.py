@@ -7,15 +7,10 @@ from .validators import URLValidator
 class LessonSerializer(serializers.ModelSerializer):
     """Создание сериализатора для модели лекции"""
 
-    video_url = serializers.URLField(
-        validators=[URLValidator()],
-        required=False,
-        help_text="Введите ссылку на лекцию. Внимание! Разрешены ссылки только на Youtube.",
-    )
-
     class Meta:
         model = Lesson
         fields = "__all__"
+        validators = [URLValidator(field="video_url")]
 
 
 class CourseSerializer(serializers.ModelSerializer):
