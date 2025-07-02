@@ -157,7 +157,6 @@ class CourseSubscriptionTestCase(APITestCase):
         self.assertEqual(
             response.get("message"), "Ваша подписка на курс 'Course 1' аннулирована."
         )
-
         url = reverse("edu_materials:course-detail", args=(self.course.pk,))
         request = self.client.get(url)
         response = request.json()

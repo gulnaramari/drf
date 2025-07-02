@@ -46,10 +46,10 @@ edu_materials\migrations\__init__.py                                            
 edu_materials\models.py                                                            27      2    93%
 edu_materials\paginators.py                                                         5      0   100%
 edu_materials\serializers.py                                                       20      0   100%
-edu_materials\tests.py                                                            155      0   100%
+edu_materials\tests.py                                                            150      0   100%
 edu_materials\urls.py                                                               9      0   100%
-edu_materials\validators.py                                                        14      0   100%
-edu_materials\views.py                                                             65      1    98%
+edu_materials\validators.py                                                        12      2    83%
+edu_materials\views.py                                                             64      1    98%
 manage.py                                                                          11      2    82%
 users\__init__.py                                                                   0      0   100%
 users\admin.py                                                                      8      0   100%
@@ -63,9 +63,9 @@ users\migrations\0003_alter_user_date_joined_alter_user_is_active_and_more.py   
 users\migrations\__init__.py                                                        0      0   100%
 users\models.py                                                                    50     16    68%
 users\permissions.py                                                               10      1    90%
-users\serializers.py                                                               16      0   100%
-users\tests.py                                                                      1      0   100%
-users\urls.py                                                                       8      0   100%
+users\serializers.py                                                               15      0   100%
+users\tests.py                                                                      0      0   100%
+users\urls.py                                                                       7      0   100%
 users\views.py                                                                     37      6    84%
 ---------------------------------------------------------------------------------------------------
-TOTAL                                                                             557     48    91%
+TOTAL                                                                             546     50    91%
