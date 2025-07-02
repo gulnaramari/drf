@@ -30,29 +30,8 @@ class LessonUserTestCase(APITestCase):
 
         self.client.force_authenticate(user=self.user)
 
-    def test_lesson_retrieve(self):
-        """Тест на корректное отображение детали лекции"""
-        url = reverse("edu_materials:lesson_detail", args=(self.lesson.pk,))
-        request = self.client.get(url)
-        response = request.json()
-
-        self.assertEqual(request.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.get("name"), "Test Lesson for tests")
-        self.assertEqual(response.get("owner"), self.user.pk)
-
-    def test_lesson_retrieve_error(self):
-        """Тест на неправильное отображение детали лекции"""
-        url = reverse("edu_materials:lesson_detail", args=(self.lesson2.pk,))
-        request = self.client.get(url)
-        response = request.json()
-
-        self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(
-            response.get("detail"), "You do not have permission to perform this action."
-        )
-
     def test_create_lesson(self):
-        """Тест создания нового урока."""
+        """Тест на корректное создание лекции"""
 
         url = reverse("edu_materials:create_lesson")
         data = {
@@ -68,8 +47,54 @@ class LessonUserTestCase(APITestCase):
         )
         self.assertTrue(Lesson.objects.all().exists())
 
+    def test_lesson_list(self):
+        """Тест на получение списка лекций"""
+
+        video_url = reverse("edu_materials:lesson_list")
+        response = self.client.get(video_url)
+        data = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        result = {
+            "count": 1,
+            "next": None,
+            "previous": None,
+            "results": [
+                {
+                    "id": self.lesson.pk,
+                    "name": self.lesson.name,
+                    "description": self.lesson.description,
+                    "preview": None,
+                    "video_url": self.lesson.video_url,
+                    "owner": self.user.pk,
+                }
+            ]
+        }
+        self.assertEqual(data, result)
+
+    def test_lesson_retrieve(self):
+        """Тест на корректное отображение детали лекции"""
+        url = reverse("edu_materials:lesson_detail", args=(self.lesson.pk,))
+        request = self.client.get(url)
+        response = request.json()
+
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.get("name"), "Test Lesson for tests")
+        self.assertEqual(response.get("owner"), self.user.pk)
+
+    def test_lesson_retrieve_error(self):
+        """Тест на некорректное отображение детали лекции"""
+        url = reverse("edu_materials:lesson_detail", args=(self.lesson2.pk,))
+        request = self.client.get(url)
+        response = request.json()
+
+        self.assertEqual(request.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.get("detail"), "You do not have permission to perform this action."
+        )
+
+
     def test_update_lesson(self):
-        """Тест изменения урока по Primary Key."""
+        """Тест на корректное редактирование лекции"""
 
         url = reverse("edu_materials:update_lesson", args=(self.lesson.pk,))
         data = {
@@ -84,14 +109,6 @@ class LessonUserTestCase(APITestCase):
             Lesson.objects.get(pk=self.lesson.pk).description,
             "Updated Test Lesson for tests 2",
         )
-
-    def test_lesson_delete1(self):
-        """Тест удаления урока по Primary Key."""
-
-        url = reverse("edu_materials:delete_lesson", args=(self.lesson.pk,))
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Lesson.objects.count(), 1)
 
     def test_lesson_delete(self):
         """Тест на корректное удаление лекции"""
