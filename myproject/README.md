@@ -46,9 +46,9 @@ edu_materials\migrations\__init__.py                                            
 edu_materials\models.py                                                            27      2    93%
 edu_materials\paginators.py                                                         5      0   100%
 edu_materials\serializers.py                                                       20      0   100%
-edu_materials\tests.py                                                            150      0   100%
+edu_materials\tests.py                                                            150     45    70%
 edu_materials\urls.py                                                               9      0   100%
-edu_materials\validators.py                                                        12      2    83%
+edu_materials\validators.py                                                        13      3    77%
 edu_materials\views.py                                                             64      1    98%
 manage.py                                                                          11      2    82%
 users\__init__.py                                                                   0      0   100%
@@ -68,4 +68,4 @@ users\tests.py                                                                  
 users\urls.py                                                                       7      0   100%
 users\views.py                                                                     37      6    84%
 ---------------------------------------------------------------------------------------------------
-TOTAL                                                                             546     50    91%
+TOTAL                                                                             547     96    82%

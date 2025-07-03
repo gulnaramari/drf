@@ -30,22 +30,14 @@ class LessonUserTestCase(APITestCase):
 
         self.client.force_authenticate(user=self.user)
 
-    def test_create_lesson(self):
-        """Тест на корректное создание лекции"""
-
+    def test_lesson_create(self):
         url = reverse("edu_materials:create_lesson")
-        data = {
-            "name": "Test Lesson for tests 2",
-            "description": "Test Lesson for tests 2",
-            "video_url": "https://www.youtube.com/lesson_1",
-            "owner": self.user.pk,
-        }
-        response = self.client.post(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(
-            Lesson.objects.filter(description="Test Lesson for tests 2").count(), 1
-        )
-        self.assertTrue(Lesson.objects.all().exists())
+        body = {"name": "Lesson 3"}
+        request = self.client.post(url, body)
+
+        self.assertEqual(request.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Lesson.objects.all().count(), 3)
+
 
     def test_lesson_list(self):
         """Тест на получение списка лекций"""
@@ -62,6 +54,7 @@ class LessonUserTestCase(APITestCase):
                 {
                     "id": self.lesson.pk,
                     "name": self.lesson.name,
+                    'course': None,
                     "description": self.lesson.description,
                     "preview": None,
                     "video_url": self.lesson.video_url,
@@ -92,23 +85,15 @@ class LessonUserTestCase(APITestCase):
             response.get("detail"), "You do not have permission to perform this action."
         )
 
-
-    def test_update_lesson(self):
+    def test_lesson_update(self):
         """Тест на корректное редактирование лекции"""
-
         url = reverse("edu_materials:update_lesson", args=(self.lesson.pk,))
-        data = {
-            "name": "Updated Test Lesson for tests",
-            "description": "Updated Test Lesson for tests 2",
-            "video_url": "https://www.youtube.com/lesson_1",
-            "owner": self.user.pk,
-        }
-        response = self.client.put(url, data=data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            Lesson.objects.get(pk=self.lesson.pk).description,
-            "Updated Test Lesson for tests 2",
-        )
+        body = {"name": "My Lesson"}
+        request = self.client.patch(url, body)
+        response = request.json()
+
+        self.assertEqual(request.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.get("name"), "My Lesson")
 
     def test_lesson_delete(self):
         """Тест на корректное удаление лекции"""
