@@ -1,33 +1,43 @@
 from rest_framework import serializers
 
-from .models import Course, Lesson
+from .models import Course, Lesson, Subscription
+from .validators import URLValidator
 
 
 class LessonSerializer(serializers.ModelSerializer):
     """Создание сериализатора для модели лекции"""
+
     class Meta:
         model = Lesson
         fields = "__all__"
+        validators = [URLValidator(field="video_url")]
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    """Создание сериализатора для модели курса с вложенным сериализатором по лекции"""
-    count_of_lessons = serializers.SerializerMethodField()
-    info_lessons = serializers.SerializerMethodField()
+    """Создание кастомного сериализатора для модели курса
+    с дополнительными полями и вложенным сериализатором по лекции"""
 
-    def get_count_of_lessons(self, obj):
-        return obj.lesson_set.count()
+    amount_of_lessons = serializers.SerializerMethodField()
+    lessons = LessonSerializer(read_only=True, many=True)
+    is_subscribed = serializers.SerializerMethodField()
 
-    def get_info_lessons(self, course):
-        lessons = course.lesson_set.all()
-        return LessonSerializer(lessons, many=True).data
+    def get_amount_of_lessons(self, course):
+        """Calculating amount of lessons of a course."""
+        return Lesson.objects.filter(course=course).count()
+
+    def get_is_subscribed(self, course):
+        """Returns info whether the user is subscribed to the course or not."""
+        user = self.context.get("request").user
+        return Subscription.objects.filter(user=user, course=course).exists()
 
     class Meta:
         model = Course
         fields = (
+            "id",
             "name",
             "description",
-            "preview",
-            "count_of_lessons",
-            "info_lessons",
+            "owner",
+            "amount_of_lessons",
+            "lessons",
+            "is_subscribed",
         )

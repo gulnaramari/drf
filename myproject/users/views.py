@@ -1,8 +1,12 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
-from rest_framework.generics import (CreateAPIView, DestroyAPIView,
-                                     ListAPIView, RetrieveAPIView,
-                                     UpdateAPIView)
+from rest_framework.generics import (
+    CreateAPIView,
+    DestroyAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+    UpdateAPIView,
+)
 from rest_framework.permissions import AllowAny
 
 from .models import Payment, User
@@ -15,6 +19,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     эндпоинта  списка платежей:менять порядок сортировки по
     дате   оплаты,  фильтровать  по   курсу   или
     уроку,  фильтровать   по   способу   оплаты"""
+
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -28,6 +33,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 class UserCreateAPIView(CreateAPIView):
     """Класс, позволяет любому пользователю зарегистрироваться."""
+
     serializer_class = UserSerializer
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
@@ -39,29 +45,35 @@ class UserCreateAPIView(CreateAPIView):
 
 
 class UserUpdateAPIView(UpdateAPIView):
-    """Класс, позволяет редактировать пользователя """
+    """Класс, позволяет редактировать пользователя"""
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsUser,)
 
 
 class UserRetrieveAPIView(RetrieveAPIView):
-    """Контроллер, позволяет получать детализацию о пользователе """
+    """Контроллер, позволяет получать детализацию о пользователе"""
+
     queryset = User.objects.all()
 
     def get_serializer_class(self):
+        """Метод, позволяет получать детализацию полную для пользователя,
+        и частичную не для этого пользователя"""
         if self.kwargs.get("pk") == self.request.user.pk:
             return UserSerializer
         return UserBaseSerializer
 
 
 class UserListAPIView(ListAPIView):
-    """Контроллер, позволяет получать список пользователей """
+    """Контроллер, позволяет получать список пользователей"""
+
     queryset = User.objects.all()
     serializer_class = UserBaseSerializer
 
 
 class UserDestroyAPIView(DestroyAPIView):
-    """Контроллер, позволяет удалять пользователя """
+    """Контроллер, позволяет удалять пользователя"""
+
     queryset = User.objects.all()
     permission_classes = (IsUser,)
