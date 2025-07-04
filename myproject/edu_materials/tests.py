@@ -38,7 +38,6 @@ class LessonUserTestCase(APITestCase):
         self.assertEqual(request.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Lesson.objects.all().count(), 3)
 
-
     def test_lesson_list(self):
         """Тест на получение списка лекций"""
 
@@ -54,13 +53,13 @@ class LessonUserTestCase(APITestCase):
                 {
                     "id": self.lesson.pk,
                     "name": self.lesson.name,
-                    'course': None,
+                    "course": None,
                     "description": self.lesson.description,
                     "preview": None,
                     "video_url": self.lesson.video_url,
                     "owner": self.user.pk,
                 }
-            ]
+            ],
         }
         self.assertEqual(data, result)
 
