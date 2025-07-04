@@ -1,9 +1,25 @@
+from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 from rest_framework import serializers
 
 from .models import Course, Lesson, Subscription
 from .validators import URLValidator
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Example 1",
+            value={
+                "video_url": "http://youtube.com/your-lesson",
+                "name": "string",
+                "description": "string",
+                "preview": "string",
+                "course": 0,
+            },
+            request_only=True,
+        ),
+    ]
+)
 class LessonSerializer(serializers.ModelSerializer):
     """Создание сериализатора для модели лекции"""
 
@@ -41,3 +57,29 @@ class CourseSerializer(serializers.ModelSerializer):
             "lessons",
             "is_subscribed",
         )
+class DocSubSerializer(serializers.Serializer):
+    subscribe = serializers.BooleanField()
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "Subscribe",
+            value={
+                "message": "Вы успешно подписаны на 'Course name'",
+            },
+            response_only=True,
+        ),
+        OpenApiExample(
+            "Unsubscribe",
+            value={
+                "message": "Ваша подписка на 'Course name' аннулирована",
+            },
+            response_only=True,
+        ),
+    ]
+)
+class DocSubResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class DocNoPermissionSerializer(serializers.Serializer):
+    detail = serializers.CharField(default="У вас нет права на это действие")

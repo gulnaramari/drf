@@ -1,12 +1,19 @@
-from rest_framework import generics, viewsets, views
+from django.utils.decorators import method_decorator
+from drf_spectacular.utils import extend_schema
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import generics, viewsets, views, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from users.permissions import IsModerator, IsOwner
 from .paginators import LMSPagination
 from .models import Course, Lesson, Subscription
-from .serializers import CourseSerializer, LessonSerializer
+from .serializers import CourseSerializer, LessonSerializer, DocSubSerializer, DocSubResponseSerializer, \
+    DocNoPermissionSerializer
 
 
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_description="description from swagger_auto_schema via method_decorator"
+))
 class CourseViewSet(viewsets.ModelViewSet):
     """Контроллер-вьюсет для CRUD
     с правами для работы модераторов, немодераторов или владельцев курсов, лекций"""
@@ -38,7 +45,15 @@ class CourseViewSet(viewsets.ModelViewSet):
         return Course.objects.all()
 
 
+
+@extend_schema(
+    request=DocSubSerializer,
+    responses={
+        status.HTTP_200_OK: DocSubResponseSerializer,
+    },
+)
 class CourseSubscriptionAPIView(views.APIView):
+    """Контроллер-дженерик для подписки на курс лекций"""
     def post(self, *args, **kwargs):
         course_id = self.kwargs.get("pk")
         course = get_object_or_404(Course, pk=course_id)
@@ -55,6 +70,12 @@ class CourseSubscriptionAPIView(views.APIView):
         return Response({"message": message})
 
 
+@extend_schema(
+    responses={
+        status.HTTP_201_CREATED: LessonSerializer,
+        status.HTTP_403_FORBIDDEN: DocNoPermissionSerializer,
+    },
+)
 class LessonCreateAPIView(generics.CreateAPIView):
     """Создание контроллера для создания лекции немодератором."""
 
