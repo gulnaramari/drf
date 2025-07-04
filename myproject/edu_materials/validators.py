@@ -4,7 +4,6 @@ from rest_framework.serializers import ValidationError
 
 class URLValidator:
     """Класс для валидации ссылок на курс."""
-
     def __init__(self, field):
         """Метод для инициализации объекта класса."""
         self.field = field
