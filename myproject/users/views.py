@@ -1,37 +1,53 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
-from rest_framework.generics import (
-    CreateAPIView,
-    DestroyAPIView,
-    ListAPIView,
-    RetrieveAPIView,
-    UpdateAPIView,
-)
+from rest_framework import generics
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from .models import Payment, User
 from .permissions import IsUser
 from .serializers import PaymentSerializer, UserBaseSerializer, UserSerializer
 
 
-class PaymentViewSet(viewsets.ModelViewSet):
-    """Контроллер для настройки фильтрации для
-    эндпоинта  списка платежей:менять порядок сортировки по
-    дате   оплаты,  фильтровать  по   курсу   или
-    уроку,  фильтровать   по   способу   оплаты"""
-
+class PaymentListAPIView(generics.ListAPIView):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_fields = (
-        "paid_course",
-        "paid_lesson",
-        "type",
+        "course",
+        "lesson",
+        "payment_type",
     )
     ordering_fields = ("payment_date",)
 
 
-class UserCreateAPIView(CreateAPIView):
+class PaymentCreateAPIView(generics.CreateAPIView):
+    serializer_class = PaymentSerializer
+
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
+        if request.data.get("payment_type") != "cash":
+            amount = request.data.get("amount")
+            price = create_price(amount)
+            payment_link = get_payment_link(price)
+            return Response(
+                {
+                    "user": request.user.pk,
+                    "course": request.data.get("course"),
+                    "lesson": request.data.get("lesson"),
+                    "amount": request.data.get("payment_amount"),
+                    "payment_type": request.data.get("payment_method"),
+                    "payment_link": payment_link,
+                }
+            )
+
+    def perform_create(self, serializer):
+        payment = serializer.save(user=self.request.user)
+        payment.save()
+
+
+class UserCreateAPIView(generics.CreateAPIView):
     """Класс, позволяет любому пользователю зарегистрироваться."""
 
     serializer_class = UserSerializer
@@ -44,7 +60,7 @@ class UserCreateAPIView(CreateAPIView):
         user.save()
 
 
-class UserUpdateAPIView(UpdateAPIView):
+class UserUpdateAPIView(generics.UpdateAPIView):
     """Класс, позволяет редактировать пользователя"""
 
     queryset = User.objects.all()
@@ -52,7 +68,7 @@ class UserUpdateAPIView(UpdateAPIView):
     permission_classes = (IsUser,)
 
 
-class UserRetrieveAPIView(RetrieveAPIView):
+class UserRetrieveAPIView(generics.RetrieveAPIView):
     """Контроллер, позволяет получать детализацию о пользователе"""
 
     queryset = User.objects.all()
@@ -65,14 +81,14 @@ class UserRetrieveAPIView(RetrieveAPIView):
         return UserBaseSerializer
 
 
-class UserListAPIView(ListAPIView):
+class UserListAPIView(generics.ListAPIView):
     """Контроллер, позволяет получать список пользователей"""
 
     queryset = User.objects.all()
     serializer_class = UserBaseSerializer
 
 
-class UserDestroyAPIView(DestroyAPIView):
+class UserDestroyAPIView(generics.DestroyAPIView):
     """Контроллер, позволяет удалять пользователя"""
 
     queryset = User.objects.all()

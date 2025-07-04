@@ -11,10 +11,11 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = (
-        "owner_id",
+        "user_id",
         "payment_date",
         "paid_course",
         "paid_lesson",
         "amount",
-        "type",
+        "payment_type"
+
     )

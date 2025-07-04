@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -95,14 +96,22 @@ class Payment(models.Model):
         ("CASH", "Наличными"),
     ]
 
-    owner = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name="Пользователь"
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name="payments",
+        verbose_name="пользователь",
+        help_text="выберите пользователя",
+        null=True,
+        blank=True,
     )
-    payment_date = models.DateField(default=datetime.now, verbose_name="Дата оплаты")
+    payment_date = models.DateTimeField(default=datetime.now, verbose_name="Дата оплаты",
+                                    help_text="Введите дату платежа")
     paid_course = models.ForeignKey(
         Course,
         on_delete=models.SET_NULL,
         verbose_name="Оплаченный курс",
+        help_text = "Выберите курс",
+        related_name="payments",
         blank=True,
         null=True,
     )
@@ -110,13 +119,27 @@ class Payment(models.Model):
         Lesson,
         on_delete=models.SET_NULL,
         verbose_name="Оплаченный урок",
+        related_name="payments",
+        help_text="Выберите лекцию",
         blank=True,
         null=True,
     )
-    amount = models.DecimalField(decimal_places=2, max_digits=20, verbose_name="Сумма")
-    type = models.CharField(
-        max_length=50, choices=PAYMENT_CHOICES, verbose_name="Способ оплаты"
+    amount = models.DecimalField(
+        decimal_places=2, max_digits=20,
+        verbose_name="Сумма платежа",
+        help_text="Введите сумму платежа",
+        validators=[MinValueValidator(0)],
+    )
+    payment_type = models.CharField(
+        max_length=50, choices=PAYMENT_CHOICES,
+        default="BANK_TRANSFER",
+        verbose_name="Способ оплаты",
+        help_text="Выберите способ оплаты"
     )
 
     def __str__(self):
-        return f"{self.owner} - {self.get_type_display()} - {self.amount}"
+        return f"Payment for {self. paid_course} by {self.user.email}"
+
+    class Meta:
+        verbose_name = "payment"
+        verbose_name_plural = "payments"
