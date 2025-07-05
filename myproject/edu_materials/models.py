@@ -98,19 +98,3 @@ class Lesson(models.Model):
     def __str__(self):
         return self.name
 
-
-class Subscription(models.Model):
-
-    user = models.ForeignKey(
-        AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="subscriptions",
-        verbose_name="пользователь",
-        help_text="Выберите пользователя",
-    )
-    course = models.ForeignKey(
-        Course,
-        on_delete=models.CASCADE,
-        verbose_name="курс",
-        help_text="Выберите курс",
-    )

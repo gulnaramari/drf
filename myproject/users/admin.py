@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Payment, User
+from .models import Payment, User, Subscription
 
 
 @admin.register(User)
@@ -11,10 +11,17 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = (
-        "owner_id",
         "payment_date",
         "paid_course",
         "paid_lesson",
         "amount",
-        "type",
+        "payment_type"
+
+    )
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = (
+         "course",
+         "created_at",
     )
