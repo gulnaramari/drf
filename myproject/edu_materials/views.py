@@ -5,10 +5,10 @@ from rest_framework import generics, viewsets, views, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from users.permissions import IsModerator, IsOwner
+from users.models import Subscription
 from .paginators import LMSPagination
-from .models import Course, Lesson, Subscription
-from .serializers import CourseSerializer, LessonSerializer, DocSubSerializer, DocSubResponseSerializer, \
-    DocNoPermissionSerializer
+from .models import Course, Lesson
+from .serializers import CourseSerializer, LessonSerializer, DocNoPermissionSerializer
 
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
@@ -45,29 +45,6 @@ class CourseViewSet(viewsets.ModelViewSet):
         return Course.objects.all()
 
 
-
-@extend_schema(
-    request=DocSubSerializer,
-    responses={
-        status.HTTP_200_OK: DocSubResponseSerializer,
-    },
-)
-class CourseSubscriptionAPIView(views.APIView):
-    """Контроллер-дженерик для подписки на курс лекций"""
-    def post(self, *args, **kwargs):
-        course_id = self.kwargs.get("pk")
-        course = get_object_or_404(Course, pk=course_id)
-        is_subscribe = self.request.data.get("subscribe")
-        user = self.request.user
-
-        if is_subscribe:
-            subscription = user.subscriptions.create(user=user, course=course)
-            subscription.save()
-            message = f"Вы успешно подписаны на курс '{course.name}'"
-        else:
-            Subscription.objects.filter(user=user, course=course).delete()
-            message = f"Ваша подписка на курс '{course.name}' аннулирована."
-        return Response({"message": message})
 
 
 @extend_schema(

@@ -1,54 +1,22 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny
+from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Payment, User
-from .permissions import IsUser
-from .serializers import PaymentSerializer, UserBaseSerializer, UserSerializer
-
-
-class PaymentListAPIView(generics.ListAPIView):
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-    filter_backends = (DjangoFilterBackend, OrderingFilter)
-    filterset_fields = (
-        "course",
-        "lesson",
-        "payment_type",
-    )
-    ordering_fields = ("payment_date",)
-
-
-class PaymentCreateAPIView(generics.CreateAPIView):
-    serializer_class = PaymentSerializer
-
-    def post(self, request, *args, **kwargs):
-        super().post(request, *args, **kwargs)
-        if request.data.get("payment_type") != "cash":
-            amount = request.data.get("amount")
-            price = create_price(amount)
-            payment_link = get_payment_link(price)
-            return Response(
-                {
-                    "user": request.user.pk,
-                    "course": request.data.get("course"),
-                    "lesson": request.data.get("lesson"),
-                    "amount": request.data.get("payment_amount"),
-                    "payment_type": request.data.get("payment_method"),
-                    "payment_link": payment_link,
-                }
-            )
-
-    def perform_create(self, serializer):
-        payment = serializer.save(user=self.request.user)
-        payment.save()
+from .models import Payment, User, Subscription
+from .permissions import IsUser, IsOwner
+from .serializers import PaymentSerializer, UserBaseSerializer, UserSerializer, SubscriptionSerializer
+from .services import create_product, create_price, create_session
+from edu_materials.models import Course
 
 
 class UserCreateAPIView(generics.CreateAPIView):
-    """Класс, позволяет любому пользователю зарегистрироваться."""
+    """Контроллер, позволяет любому пользователю зарегистрироваться."""
 
     serializer_class = UserSerializer
     queryset = User.objects.all()
@@ -61,7 +29,7 @@ class UserCreateAPIView(generics.CreateAPIView):
 
 
 class UserUpdateAPIView(generics.UpdateAPIView):
-    """Класс, позволяет редактировать пользователя"""
+    """Контроллер, позволяет редактировать пользователя"""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -93,3 +61,87 @@ class UserDestroyAPIView(generics.DestroyAPIView):
 
     queryset = User.objects.all()
     permission_classes = (IsUser,)
+
+
+class PaymentsListAPIView(generics.ListAPIView):
+    """Контроллер для списка оплат."""
+
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ('paid_course', 'paid_lesson', 'payment_type')
+    ordering_fields = ("payment_date",)
+    permission_classes = [IsAuthenticated]
+
+
+class PaymentRetrieveAPIView(generics.RetrieveAPIView):
+    """Контроллер для просмотра информации об оплате."""
+
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated & IsOwner | IsAuthenticated]
+
+
+class PaymentCreateAPIView(generics.CreateAPIView):
+    """Контроллер для создания оплаты """
+
+    serializer_class = PaymentSerializer
+
+    def perform_create(self, serializer):
+        """Метод вносит изменение в сериализатор создания платежа"""
+
+        payment = serializer.save(user=self.request.user)
+        product_id = create_product(payment)
+        price = create_price(payment, product_id)
+        session_id, session_url = create_session(price)
+        payment.session_id = session_id
+        payment.payment_link = session_url
+        payment.save()
+
+
+class PaymentUpdateAPIView(generics.UpdateAPIView):
+    """Контроллер для изменения оплаты """
+
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated & IsOwner | IsAuthenticated]
+
+
+class PaymentDestroyAPIView(generics.DestroyAPIView):
+    """Контроллер для удаления оплаты """
+
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+class SubscriptionView(APIView):
+    """Контроллер для создания или удаления подписки пользователя на курс."""
+
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated | IsAuthenticated & IsOwner]
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["course"],
+            properties={"course": openapi.Schema(type=openapi.TYPE_INTEGER)},
+        )
+    )
+    def post(self, *args, **kwargs):
+        """Метод для отправки запроса на создание или
+        удаление подписки пользователя на курс."""
+
+        user = self.request.user
+        course_id = self.request.data.get("course")
+        course_item = get_object_or_404(Course, pk=course_id)
+
+        subs_item = Subscription.objects.all().filter(user=user, course=course_item)
+
+        if subs_item.exists():
+            subs_item.delete()
+            message = "Подписка удалена."
+        else:
+            Subscription.objects.create(owner=user, course=course_item)
+            message = "Подписка добавлена."
+        return Response({"message": message})

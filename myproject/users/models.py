@@ -36,8 +36,8 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     """Создание модели пользователя с соответствующими полями"""
-
     username = None
+
     email = models.EmailField(
         unique=True, verbose_name="почта", help_text="Введите почту"
     )
@@ -136,10 +136,40 @@ class Payment(models.Model):
         verbose_name="Способ оплаты",
         help_text="Выберите способ оплаты"
     )
+    session_id = models.CharField(max_length=255, null=True, blank=True, verbose_name="ID сессии")
+    payment_link = models.URLField(max_length=400, null=True, blank=True, verbose_name="Ссылка на оплату")
+
 
     def __str__(self):
-        return f"Payment for {self. paid_course} by {self.user.email}"
+        """Метод для описания  модели платеж."""
+
+        return f'{self.user} - {self.amount} ({self.paid_lesson})'
 
     class Meta:
-        verbose_name = "payment"
-        verbose_name_plural = "payments"
+        """Класс для изменения поведения полей модели платеж"""
+
+        verbose_name = 'Платеж'
+        verbose_name_plural = 'Платежи'
+        ordering = ['payment_date', 'user', 'amount', 'paid_course', 'paid_lesson', 'payment_type']
+
+
+class Subscription(models.Model):
+    """Класс модели подписка."""
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Пользователь")
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Подписка на курс"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата начала подписки")
+
+    def __str__(self):
+        """Метод для описания модели подписка"""
+
+        return f"{self.owner}: {self.course} {self.course.name}"
+
+    class Meta:
+        """Класс для изменения поведения полей модели подписка"""
+
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+        ordering = ["created_at", "owner", "course"]
