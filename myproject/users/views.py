@@ -9,8 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Payment, User, Subscription
-from .permissions import IsUser, IsOwner
-from .serializers import PaymentSerializer, UserBaseSerializer, UserSerializer, SubscriptionSerializer
+from .permissions import IsUser, IsOwner, IsUserOwner
+from .serializers import PaymentSerializer, UserBaseSerializer, UserSerializer, SubscriptionSerializer, \
+    CustomUserSerializer
 from .services import create_product, create_price, create_session
 from edu_materials.models import Course
 
@@ -32,8 +33,8 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     """Контроллер, позволяет редактировать пользователя"""
 
     queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = (IsUser,)
+    serializer_class = CustomUserSerializer
+    permission_classes = [IsAuthenticated & IsUserOwner]
 
 
 class UserRetrieveAPIView(generics.RetrieveAPIView):
@@ -83,7 +84,7 @@ class PaymentRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class PaymentCreateAPIView(generics.CreateAPIView):
-    """Контроллер для создания оплаты """
+    """Контроллер для создания оплаты через платежный сервис Stripe"""
 
     serializer_class = PaymentSerializer
 
@@ -111,7 +112,7 @@ class PaymentDestroyAPIView(generics.DestroyAPIView):
     """Контроллер для удаления оплаты """
 
     queryset = Payment.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated & IsOwner]
 
 
 class SubscriptionView(APIView):
@@ -136,10 +137,10 @@ class SubscriptionView(APIView):
         course_id = self.request.data.get("course")
         course_item = get_object_or_404(Course, pk=course_id)
 
-        subs_item = Subscription.objects.all().filter(user=user, course=course_item)
+        subscription_item = Subscription.objects.all().filter(user=user, course=course_item)
 
-        if subs_item.exists():
-            subs_item.delete()
+        if subscription_item.exists():
+            subscription_item.delete()
             message = "Подписка удалена."
         else:
             Subscription.objects.create(owner=user, course=course_item)
