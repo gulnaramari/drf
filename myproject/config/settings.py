@@ -207,13 +207,19 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 SERVER_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 EMAIL_ADMIN = EMAIL_HOST_USER
 
-CSRF_TRUSTED_ORIGINS=
-CORS_ALLOWED_ORIGINS=
-CORS_ALLOW_ALL_ORIGINS=
-CORS_ALLOW_CREDENTIALS=
-
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:8000", "http://127.0.0.1:8000"]
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
 CELERY_TIMEZONE = 'Europe/Moscow'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+    'blocking_users': {'task': 'users.tasks.blocking_users', 'schedule': timedelta(days=30)}
+}
+

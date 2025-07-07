@@ -1,17 +1,17 @@
 import smtplib
 from datetime import timedelta
 from celery import shared_task
-from django.core.mail import send_mail, BadHeaderError
+from django.core.mail import send_mail
 from django.utils import timezone
-from django.http import HttpResponse
-from config.settings import EMAIL_HOST_USER
-from edu_materials.models import Course
+from django.http import HttpResponse, BadHeaderError
+from myproject.config.settings import EMAIL_HOST_USER
+from myproject.edu_materials.models import Course
 from .models import Subscription, User
 
 
 @shared_task
-def send_course_update_message(course_id):
-    """Отправляет сообщение об обновлении материалов курса."""
+def send_course_update(course_id):
+    """Отправляет сообщение об обновлении материалов курса тем, кто подписан на этот курс."""
 
     course = Course.objects.get(id=course_id)
     subscriptions = Subscription.objects.filter(course=course_id)
@@ -20,41 +20,17 @@ def send_course_update_message(course_id):
     try:
         send_mail(
             subject='В курсе произошли изменения',
-            message=f'В курсе "{course.title}" произошли изменения',
+            message=f'В курсе "{course.name}" произошли изменения',
             from_email=EMAIL_HOST_USER,
             recipient_list=recipient_list,
             fail_silently=True
         )
-    except BadHeaderError:
-        return HttpResponse('Обнаружен недопустимый заголовок.')
     except smtplib.SMTPException:
         raise smtplib.SMTPException
 
 
 @shared_task
-def send_course_update_for_update_lesson_message(lesson_id):
-    """Отправляет сообщение об обновлении материалов урока курса."""
-
-    course = Course.objects.get(lessons=lesson_id)
-    subscriptions = Subscription.objects.filter(course=course.pk)
-    recipient_list = [subscriptions.owner.email for subscriptions in subscriptions]
-
-    try:
-        send_mail(
-            subject='В программе курса произошли изменения',
-            message=f'В программе курса "{course.name}" произошли изменения',
-            from_email=EMAIL_HOST_USER,
-            recipient_list=recipient_list,
-            fail_silently=True
-        )
-    except BadHeaderError:
-        return HttpResponse('Обнаружен недопустимый заголовок.')
-    except smtplib.SMTPException:
-        raise smtplib.SMTPException
-
-
-@shared_task
-def blocking_inactive_users():
+def blocking_users():
     """Блокирует пользователей, которые бездействуют более 30 дней."""
 
     users = User.objects.filter(is_active=True)
@@ -74,13 +50,18 @@ def blocking_inactive_users():
             fail_silently=True
         )
     except BadHeaderError:
-        return HttpResponse('Обнаружен недопустимый заголовок.')
+        return HttpResponse('Обнаружена ошибка')
     except smtplib.SMTPException:
         raise smtplib.SMTPException
-    print(f"Отключены пользователи: {', '.join(users.email)}.")
+    print(f"Пользователи:{', '.join(users.email)} заблокированы.")
+
+
+
+
+
 
 
 @shared_task
-def test_task(a, b):
+def add_test(a, b):
     result = a + b
     print(result)

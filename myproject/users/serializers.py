@@ -63,6 +63,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         pay_info = ', '.join( list_info)
         return pay_info
 
+
     def get_subscriptions(self, obj):
         """Метод для вывода информации об обновлениях подписки """
 

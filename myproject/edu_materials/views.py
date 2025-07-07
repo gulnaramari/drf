@@ -1,14 +1,15 @@
+from datetime import timedelta
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from drf_spectacular.utils import extend_schema
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import generics, viewsets, views, status
-from rest_framework.generics import get_object_or_404
-from rest_framework.response import Response
+from rest_framework import generics, viewsets, status
+from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsModerator, IsOwner
-from users.models import Subscription
 from .paginators import LMSPagination
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer, DocNoPermissionSerializer
+from users.tasks import send_course_update
 
 
 @method_decorator(name='list', decorator=swagger_auto_schema(
@@ -18,33 +19,45 @@ class CourseViewSet(viewsets.ModelViewSet):
     """Контроллер-вьюсет для CRUD
     с правами для работы модераторов, немодераторов или владельцев курсов, лекций"""
 
-    queryset = Course.objects.all().order_by("id")
     serializer_class = CourseSerializer
+    queryset = Course.objects.all()
     pagination_class = LMSPagination
 
     def get_permissions(self):
-        """Метод для разграничения прав доступа, формирует список
-        прав  для немодератора, модератора или владельца"""
-        if self.action == "create":
-            self.permission_classes = (~IsModerator,)
-        elif self.action == "destroy":
-            self.permission_classes = (~IsModerator | IsOwner,)
-        else:
-            self.permission_classes = (IsModerator | IsOwner,)
-        return super().get_permissions()
+        """Метод разграничения разрешений на доступ к эндпоитам в соответствии с запросом."""
+        if self.action in ['create']:
+            self.permission_classes = [IsAuthenticated & ~IsModerator]
+        elif self.action in ['list', 'change', 'retrieve']:
+            self.permission_classes = [IsAuthenticated & IsOwner | IsAuthenticated & IsModerator]
+        elif self.action in ['destroy']:
+            self.permission_classes = [IsAuthenticated & IsOwner]
+        return [permission() for permission in self.permission_classes]
 
     def perform_create(self, serializer):
         """Метод для присваивания курса владельцу"""
-        course = serializer.save(owner=self.request.user)
+        new_course = serializer.save(owner=self.request.user)
+        new_course.save()
+
+    def perform_update(self, serializer):
+        """Метод обновления курса.
+        Уведомление об обновлении отправляется только в том случае,
+         если курс не обновлялся более четырех часов"""
+
+        course = serializer.save()
+        if course.updated_at:
+            time_difference = timezone.now() - course.updated_at
+            if time_difference > timedelta(hours=4):
+                send_course_update.delay(course)
+        else:
+            send_course_update.delay(course)
+        course.updated_at = timezone.now()
         course.save()
 
     def get_queryset(self):
-        """Метод, позволяет получить список курсов для владельца"""
-        if not IsModerator().has_permission(self.request, self):
-            return Course.objects.filter(owner=self.request.user)
-        return Course.objects.all()
-
-
+        """Метод для изменения запроса к базе данных по объектам модели "Курса"."""
+        if self.request.user.groups.filter(name="Модератор").exists():
+            return Course.objects.all()
+        return Course.objects.filter(owner=self.request.user)
 
 
 @extend_schema(
@@ -71,11 +84,11 @@ class LessonListAPIView(generics.ListAPIView):
     которые могут просматривать владельцы или модераторы"""
 
     serializer_class = LessonSerializer
-    permission_classes = (IsModerator | IsOwner,)
+    permission_classes = [IsAuthenticated & IsModerator | IsAuthenticated & IsOwner]
     pagination_class = LMSPagination
 
     def get_queryset(self):
-        """Метод, позволяет получить список лекции владельца"""
+        """Метод, позволяет получить список лекции владельца или модератора"""
         if not IsModerator().has_permission(self.request, self):
             return Lesson.objects.filter(owner=self.request.user)
         return Lesson.objects.all()
@@ -86,7 +99,7 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
     queryset = Lesson.objects.all().order_by("id")
     serializer_class = LessonSerializer
-    permission_classes = (IsModerator | IsOwner,)
+    permission_classes = [IsAuthenticated & IsModerator | IsAuthenticated & IsOwner]
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
@@ -94,11 +107,29 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 
     queryset = Lesson.objects.all().order_by("id")
     serializer_class = LessonSerializer
-    permission_classes = (IsModerator | IsOwner,)
+    permission_classes = [IsAuthenticated & IsModerator | IsAuthenticated & IsOwner]
+
+    def perform_update(self, serializer):
+        """Метод вносит изменение в сериализатор редактирования "Урока"."""
+
+        lesson = serializer.save()
+        courses = Course.objects.filter(pk=lesson.course.pk)
+        for course in courses:
+            if lesson.updated_at:
+                time_difference = timezone.now() - lesson.updated_at
+                if time_difference > timedelta(hours=3):
+                    send_course_update.delay(course.pk)
+            else:
+                send_course_update.delay(course.pk)
+
+        lesson.updated_at = timezone.now()
+        courses.updated_at = timezone.now()
+        lesson.save()
+
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
     """Класс, позволяет немодератору или владельцу удалить лекцию"""
 
     queryset = Lesson.objects.all().order_by("id")
-    permission_classes = (~IsModerator | IsOwner,)
+    permission_classes = [IsAuthenticated & IsModerator | IsAuthenticated & IsOwner]
