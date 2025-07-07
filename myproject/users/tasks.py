@@ -1,3 +1,4 @@
+import eventlet
 import smtplib
 from datetime import timedelta
 from celery import shared_task
@@ -56,12 +57,7 @@ def blocking_users():
     print(f"Пользователи:{', '.join(users.email)} заблокированы.")
 
 
-
-
-
-
-
 @shared_task
-def add_test(a, b):
-    result = a + b
-    print(result)
+def test_add(a, b):
+    z = a + b
+    print(z)
