@@ -14,7 +14,7 @@ class URLValidator:
     def __call__(self, value):
         """Метод для поверки данных поля ссылки"""
         if self.field is not None:
-            reg = re.compile("^(https?://)?(www\.)?youtube\.com/.+123$")
+            reg = re.compile("^(https?://)?(www.youtube.com/.+123$")
             tmp_value = dict(value).get(self.field)
             if tmp_value is None:
                 return None
